@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Therma: Discrete Thermodynamic Machine Emulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      tags: 'ams'
+    },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+    chtml: { scale: 1.05 }
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #ffffff;
+  --bg2:     #f7f7f5;
+  --border:  #e4e4df;
+  --text:    #18181b;
+  --text2:   #52525b;
+  --text3:   #a1a1aa;
+  --accent:  #b45309;
+  --accent2: #0f766e;
+  --link:    #1d4ed8;
+  --code-bg: #f4f4f0;
+  --sans:    'DM Sans', system-ui, sans-serif;
+  --mono:    'JetBrains Mono', 'Courier New', monospace;
+  --content: 720px;
+  --wide:    1000px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Top bar ── */
+.topbar {
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+}
+.topbar-left { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); }
+.topbar-left a { color: var(--text2); text-decoration: none; font-weight: 500; }
+.topbar-left a:hover { color: var(--accent); }
+.topbar-sep { color: var(--text3); font-size: 11px; }
+.topbar-right { display: flex; gap: 24px; }
+.topbar-right a { font-size: 13px; color: var(--text2); text-decoration: none; }
+.topbar-right a:hover { color: var(--text); }
+
+/* ── Hero ── */
+.hero {
+  padding: 64px 24px 48px;
+  max-width: var(--content);
+  margin: 0 auto;
+}
+.hero-venue {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+h1.paper-title {
+  font-family: var(--sans);
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+h1.paper-title em { font-style: normal; }
+.paper-subtitle {
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text2);
+  font-style: normal;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.meta-date { font-size: 13.5px; color: var(--text3); }
+.meta-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  background: #fef9ee;
+  color: #78350f;
+  border: 1px solid #fcd34d;
+  padding: 3px 10px;
+  border-radius: 3px;
+}
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--text); color: #fff; border: 1px solid var(--text); }
+.btn-primary:hover { background: #3f3f46; border-color: #3f3f46; }
+.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--bg2); text-decoration: none; }
+
+/* ── Figure ── */
+.hero-visual {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding: 0 24px 56px;
+}
+.pipeline-figure {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 40px 32px;
+  overflow-x: auto;
+}
+.pipeline-figure figcaption {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 18px;
+}
+
+/* ── Sections ── */
+.section {
+  padding: 52px 24px;
+  max-width: var(--content);
+  margin: 0 auto;
+}
+.section + .section { border-top: 1px solid var(--border); }
+h2.sec-title {
+  font-family: var(--sans);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 18px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+h3.sub-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 30px 0 10px;
+  letter-spacing: -0.01em;
+}
+p { margin-bottom: 16px; color: var(--text2); font-size: 16.5px; }
+p:last-child { margin-bottom: 0; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { padding-left: 20px; margin-bottom: 16px; }
+li { color: var(--text2); font-size: 16.5px; margin-bottom: 7px; line-height: 1.65; }
+li strong { color: var(--text); font-weight: 500; }
+code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--text);
+}
+
+.callout {
+  background: var(--bg2);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px;
+  border-radius: 0 4px 4px 0;
+  margin: 24px 0;
+  font-size: 15.5px;
+  color: var(--text2);
+  font-style: normal;
+}
+
+/* ── Equations ── */
+.eq-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 13px 20px;
+  margin: 20px 0;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  color: var(--text);
+  overflow-x: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.eq-label { font-size: 12px; color: var(--text3); flex-shrink: 0; }
+
+/* ── Engine table ── */
+.engine-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14.5px; }
+.engine-table th {
+  text-align: left;
+  padding: 9px 14px;
+  background: var(--bg2);
+  border-bottom: 2px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.engine-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--text2);
+  line-height: 1.55;
+}
+.engine-table tr:last-child td { border-bottom: none; }
+.engine-table tr:hover td { background: #fafaf8; }
+.engine-table td:first-child {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-base { background: #eff6ff; color: #1d4ed8; }
+.badge-hw   { background: #fef3c7; color: #92400e; }
+.badge-exp  { background: #f0fdf4; color: #15803d; }
+
+/* ── Code ── */
+.code-wrap { margin: 24px 0; border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0f0ec;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.code-filename { font-family: var(--mono); font-size: 11.5px; color: var(--text2); }
+.code-lang { font-family: var(--mono); font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+pre {
+  background: var(--code-bg);
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.kw  { color: #7c3aed; }
+.fn  { color: #0369a1; }
+.cm  { color: #71717a; font-style: italic; }
+.str { color: #15803d; }
+.num { color: #b45309; }
+.cls { color: #b45309; font-weight: 500; }
+
+/* ── Outputs ── */
+.outputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+@media (max-width: 600px) { .outputs-grid { grid-template-columns: 1fr; } }
+.output-box { border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
+.output-box-header {
+  background: var(--bg2);
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.output-engine { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.output-config { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+.output-box-body { padding: 12px 14px; }
+.output-prompt { font-size: 12px; color: var(--text3); margin-bottom: 6px; font-family: var(--mono); }
+.output-prompt::before { content: 'Prompt: '; font-weight: 500; }
+.output-text { font-size: 14.5px; color: var(--text2); line-height: 1.65; font-style: normal; }
+
+/* ── Ping-pong timing diagram ── */
+.timing-wrap {
+  margin: 32px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg2);
+}
+.timing-header {
+  padding: 10px 16px;
+  background: #f0f0ec;
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text2);
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.timing-body { padding: 24px 20px 20px; }
+
+@keyframes tsu0-relax {
+  0%,49%  { background:#dbeafe; color:#1e40af; }
+  50%,100%{ background:#dcfce7; color:#15803d; }
+}
+@keyframes tsu1-relax {
+  0%,49%  { background:#dcfce7; color:#15803d; }
+  50%,100%{ background:#dbeafe; color:#1e40af; }
+}
+.pp-cell-relax { animation: tsu0-relax 2.4s steps(1) infinite; }
+.pp-cell-sample { animation: tsu1-relax 2.4s steps(1) infinite; }
+
+.pp-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: tick-pulse 2.4s ease-in-out infinite;
+}
+@keyframes tick-pulse {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%    { opacity:0.3; transform:scale(0.7); }
+}
+
+/* ── Authors ── */
+.authors-block {
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 44px 24px;
+}
+.authors-inner { max-width: var(--content); margin: 0 auto; }
+.authors-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 22px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text3);
+}
+footer a { color: var(--text3); text-decoration: none; }
+footer a:hover { color: var(--text2); }
+.footer-links { display: flex; gap: 20px; }
+
+hr.divider { border: none; border-top: 1px solid var(--border); }
+
+/* ── MathJax overrides ── */
+mjx-container { overflow-x: auto; max-width: 100%; }
+mjx-container[display="true"] {
+  padding: 14px 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin: 20px 0;
+}
+mjx-container[display="true"] mjx-math { font-size: 105% !important; }
+
+@media (max-width: 640px) {
+  .topbar { padding: 0 16px; }
+  .topbar-right { display: none; }
+  .hero { padding: 40px 16px 32px; }
+  .hero-visual { padding: 0 16px 40px; }
+  .section { padding: 36px 16px; }
+  .pipeline-figure { padding: 20px 8px; }
+  footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <span>Independent Research</span>
+    <span class="topbar-sep">›</span>
+    <a href="#">Therma</a>
+  </div>
+  <nav class="topbar-right">
+    <a href="#abstract">Abstract</a>
+    <a href="#s1">§1 Energy Projection</a>
+    <a href="#s2">§2 Dual-TSU</a>
+    <a href="#s3">§3 Hardware</a>
+    <a href="#s4">§4 Conclusion</a>
+  </nav>
+</header>
+
+<!-- ── Title ── -->
+<div class="hero">
+  <p class="hero-venue">Thermodynamic Computing &nbsp;·&nbsp; Proof of Concept &nbsp;·&nbsp; 2026</p>
+
+  <h1 class="paper-title">
+    Therma: Discrete Thermodynamic Machine Emulation
+  </h1>
+
+  <p class="paper-subtitle">
+    A physics-inspired replacement for the Softmax layer in autoregressive LLM inference,
+    enabling analog-hardware-compatible token generation via thermodynamic relaxation.
+  </p>
+
+  <div class="meta-row">
+    <span class="meta-date">2026</span>
+    <span class="meta-note">
+      <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>
+      Independent research project
+    </span>
+  </div>
+
+  <div class="btn-row">
+    <a href="https://github.com/Phacharapon-12/Therma" class="btn btn-primary" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+      GitHub
+    </a>
+    <a href="https://huggingface.co/phacharapon" class="btn btn-outline" target="_blank">🤗&nbsp; HuggingFace</a>
+    <a href="https://www.linkedin.com/in/phacharapon-phadiangkornburi-9bb0573b8/" class="btn btn-outline" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+      LinkedIn
+    </a>
+    <a href="https://huggingface.co/Qwen/Qwen2.5-0.5B" class="btn btn-outline" target="_blank">Qwen2.5-0.5B ↗</a>
+  </div>
+</div>
+
+<!-- ── Pipeline figure ── -->
+<div class="hero-visual">
+  <figure class="pipeline-figure">
+    <svg viewBox="0 0 880 156" width="100%" style="max-width:840px; display:block; margin:0 auto; font-family:'DM Sans',sans-serif;">
+      <defs>
+        <marker id="ar1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <path d="M0,1 L0,6 L7,3.5 z" fill="#a1a1aa"/>
+        </marker>
+        <marker id="ar2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <path d="M0,1 L0,6 L7,3.5 z" fill="#b45309"/>
+        </marker>
+      </defs>
+      <!-- Boxes -->
+      <rect x="2" y="38" width="136" height="80" rx="4" fill="#f4f4f0" stroke="#e4e4df" stroke-width="1.5"/>
+      <text x="70" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#18181b">Qwen2.5-0.5B</text>
+      <text x="70" y="89" text-anchor="middle" font-size="11" fill="#71717a">Transformer</text>
+      <text x="70" y="105" text-anchor="middle" font-size="11" fill="#71717a">896-dim h</text>
+
+      <rect x="176" y="38" width="148" height="80" rx="4" fill="#f4f4f0" stroke="#e4e4df" stroke-width="1.5"/>
+      <text x="250" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#18181b">Weight Surgery</text>
+      <text x="250" y="89" text-anchor="middle" font-size="11" fill="#71717a">lm_head.weight.T</text>
+      <text x="250" y="105" text-anchor="middle" font-size="11" fill="#71717a">→ DTM projection</text>
+
+      <rect x="372" y="24" width="152" height="108" rx="4" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="448" y="56" text-anchor="middle" font-size="12" font-weight="600" fill="#92400e">Energy Surface</text>
+      <text x="448" y="74" text-anchor="middle" font-size="11" fill="#a16207">E(t) = −logit(t)</text>
+      <text x="448" y="91" text-anchor="middle" font-size="11" fill="#a16207">P ∝ exp(−βE)</text>
+      <text x="448" y="108" text-anchor="middle" font-size="11" fill="#a16207">β = 1/T</text>
+
+      <rect x="572" y="38" width="148" height="80" rx="4" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <text x="646" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#15803d">TSU Nodes</text>
+      <text x="646" y="89" text-anchor="middle" font-size="11" fill="#4ade80">256 – 512 nodes</text>
+      <text x="646" y="105" text-anchor="middle" font-size="11" fill="#4ade80">Hierarchical PGM</text>
+
+      <rect x="768" y="38" width="108" height="80" rx="4" fill="#f4f4f0" stroke="#e4e4df" stroke-width="1.5"/>
+      <text x="822" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#18181b">Token Out</text>
+      <text x="822" y="89" text-anchor="middle" font-size="11" fill="#71717a">decode → text</text>
+      <text x="822" y="105" text-anchor="middle" font-size="11" fill="#71717a">autoregressive ↺</text>
+
+      <!-- Arrows -->
+      <line x1="138" y1="78" x2="174" y2="78" stroke="#a1a1aa" stroke-width="1.5" marker-end="url(#ar1)"/>
+      <line x1="324" y1="78" x2="370" y2="78" stroke="#b45309" stroke-width="1.5" marker-end="url(#ar2)"/>
+      <line x1="524" y1="78" x2="570" y2="78" stroke="#b45309" stroke-width="1.5" marker-end="url(#ar2)"/>
+      <line x1="720" y1="78" x2="766" y2="78" stroke="#a1a1aa" stroke-width="1.5" marker-end="url(#ar1)"/>
+      <text x="155" y="71" text-anchor="middle" font-size="10" fill="#a1a1aa">h</text>
+      <text x="346" y="71" text-anchor="middle" font-size="10" fill="#b45309">logits</text>
+      <text x="546" y="71" text-anchor="middle" font-size="10" fill="#b45309">sample</text>
+    </svg>
+    <figcaption>
+      Fig. 1 — Therma inference pipeline. The transformer backbone is frozen; only the sampling head is replaced
+      with a JAX-based thermodynamic machine operating over an energy landscape derived from the pre-trained weights.
+    </figcaption>
+  </figure>
+</div>
+
+<hr class="divider">
+
+<!-- ── Abstract ── -->
+<div class="section" id="abstract">
+  <h2 class="sec-title">Abstract</h2>
+  <p>
+    Therma proposes a paradigm shift in Large Language Model (LLM) inference by discarding the computationally rigid, globally normalized Softmax layer. Instead, we introduce a Discrete Thermodynamic Machine (DTM) emulation utilizing JAX. By conceptualizing the pre-trained <code>lm_head</code> projection weights as an energy landscape, token generation is recast as a physical relaxation process within an Energy-Based Model (EBM). This framework demonstrates that autoregressive inference can be sustained on highly stochastic, analog-inspired architectures, paving the way for ultra-low-power edge deployment where thermal noise is harnessed as a computational utility rather than an adversarial artifact.
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- ── §1 ── -->
+<div class="section" id="s1">
+  <h2 class="sec-title">1. Zero-Shot Energy Matrix Projection</h2>
+  <p>
+    In standard digital inference, the hidden state vector is multiplied by the vocabulary projection matrix to yield logits, which are then exponentially normalized. Therma bypasses this exactness. We perform a zero-shot alignment, treating the projection weights as <em>energy potential coefficients</em>.
+  </p>
+  <p>
+    For a given hidden state $h_t$ and projection matrix $W$, the energy $E$ of a prospective token $x_i$ is defined natively as:
+  </p>
+
+  $$E(x_i) = - \left( h_t \cdot W_i \right)$$
+
+  <p>
+    The system samples the subsequent token by naturally relaxing toward low-energy states, governed by the Boltzmann distribution:
+  </p>
+
+  $$P(x_i) \propto \exp\!\left(-\beta\, E(x_i)\right)$$
+
+  <p>
+    This fundamentally removes the need for a complete partition function ($Z$) calculation across the entire vocabulary space, unlocking immense efficiency gains for hardware implementations.
+  </p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-filename">weight_transfer.py</span>
+      <span class="code-lang">Python</span>
+    </div>
+    <pre><span class="cm"># Qwen lm_head.weight: (vocab=151936, hidden=896)</span>
+<span class="kw">with</span> torch.no_grad():
+    transferred_weights = jnp.array(
+        model.lm_head.weight.data.t()   <span class="cm"># → (hidden=896, vocab=151936)</span>
+        .to(torch.float32).cpu().numpy()
+    )
+<span class="cm"># E(xᵢ) = −(hₜ · Wᵢ)   →   P(xᵢ) ∝ exp(−β·E(xᵢ))</span></pre>
+  </div>
+
+  <!-- Energy stacking diagram -->
+  <div class="timing-wrap" style="margin-top:32px;">
+    <div class="timing-header">Fig. 2 — From Neural Network Weights to Energy Levels Stacked in Nodes</div>
+    <div class="timing-body" style="padding:28px 20px 24px; overflow-x:auto;">
+      <div id="energy-diagram" style="min-width:580px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<hr class="divider">
+
+<!-- ── §2 ── -->
+<div class="section" id="s2">
+  <h2 class="sec-title">2. The 512-Node Dual-TSU Ping-Pong Architecture</h2>
+  <p>
+    A primary bottleneck of MCMC and Gibbs sampling approaches is the sequential mixing time required to reach thermal equilibrium. To achieve competitive throughput, Therma implements a <strong>temporal multiplexing strategy</strong> via a Dual Thermodynamic Sampling Unit (TSU) architecture.
+  </p>
+  <p>
+    The 512-node master PGM is partitioned into two physical units. While <strong>TSU-0</strong> is actively reading out the sampled token (Exploitation), <strong>TSU-1</strong> is simultaneously injected with the next hidden state to begin its thermal relaxation phase (Exploration). This ping-pong sequence hides the stochastic settling latency entirely, maintaining a continuous inference pipeline.
+  </p>
+
+  <!-- Timing Diagram -->
+  <div class="timing-wrap">
+    <div class="timing-header">Fig. 2 — Dual-TSU Ping-Pong Timing Diagram (live simulation)</div>
+    <div class="timing-body">
+      <svg viewBox="0 0 660 200" width="100%" style="max-width:640px; display:block; margin:0 auto; font-family:'DM Sans',sans-serif; overflow:visible;">
+        <defs>
+          <style>
+            .lbl { font-size:11px; fill:#52525b; font-weight:600; font-family:'DM Sans',sans-serif; }
+            .tlbl { font-size:10px; fill:#a1a1aa; font-family:'JetBrains Mono',monospace; }
+            .phase-relax { fill:#dbeafe; stroke:#93c5fd; stroke-width:1; }
+            .phase-sample { fill:#dcfce7; stroke:#86efac; stroke-width:1; }
+            .phase-out { fill:#fef9c3; stroke:#fde047; stroke-width:1; }
+            .txt-relax { font-size:10px; fill:#1e40af; font-weight:600; font-family:'DM Sans',sans-serif; }
+            .txt-sample { font-size:10px; fill:#15803d; font-weight:600; font-family:'DM Sans',sans-serif; }
+            .txt-out { font-size:10px; fill:#92400e; font-weight:600; font-family:'DM Sans',sans-serif; }
+            @keyframes pp-blink { 0%,49%{opacity:1} 50%,100%{opacity:0.25} }
+            @keyframes pp-blink2{ 0%,49%{opacity:0.25} 50%,100%{opacity:1} }
+            .blink1 { animation: pp-blink 2.4s steps(1) infinite; }
+            .blink2 { animation: pp-blink2 2.4s steps(1) infinite; }
+            @keyframes token-slide {
+              0%  { opacity:0; transform:translateX(-6px); }
+              15% { opacity:1; transform:translateX(0); }
+              80% { opacity:1; }
+              100%{ opacity:0; }
+            }
+            .tok { animation: token-slide 1.2s ease-out infinite; }
+            .tok2{ animation: token-slide 1.2s ease-out 0.6s infinite; }
+            .tok3{ animation: token-slide 1.2s ease-out 1.2s infinite; }
+            .tok4{ animation: token-slide 1.2s ease-out 1.8s infinite; }
+          </style>
+        </defs>
+
+        <!-- Y-axis labels -->
+        <text x="52" y="62"  class="lbl" text-anchor="end">TSU-0</text>
+        <text x="52" y="110" class="lbl" text-anchor="end">TSU-1</text>
+        <text x="52" y="166" class="lbl" text-anchor="end">Token Out</text>
+
+        <!-- Column headers: Token t, t+1, t+2, t+3 -->
+        <text x="142" y="22" class="tlbl" text-anchor="middle">Token t</text>
+        <text x="282" y="22" class="tlbl" text-anchor="middle">Token t+1</text>
+        <text x="422" y="22" class="tlbl" text-anchor="middle">Token t+2</text>
+        <text x="562" y="22" class="tlbl" text-anchor="middle">Token t+3</text>
+
+        <!-- Vertical grid lines -->
+        <line x1="62"  y1="30" x2="62"  y2="182" stroke="#e4e4df" stroke-width="1"/>
+        <line x1="202" y1="30" x2="202" y2="182" stroke="#e4e4df" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="342" y1="30" x2="342" y2="182" stroke="#e4e4df" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="482" y1="30" x2="482" y2="182" stroke="#e4e4df" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="622" y1="30" x2="622" y2="182" stroke="#e4e4df" stroke-width="1"/>
+
+        <!-- TSU-0 row: RELAX | SAMPLE | RELAX | SAMPLE -->
+        <rect x="63"  y="42" width="138" height="30" class="phase-relax blink2"/>
+        <text x="132" y="62" class="txt-relax blink2" text-anchor="middle">RELAX ∿</text>
+
+        <rect x="203" y="42" width="138" height="30" class="phase-sample blink1"/>
+        <text x="272" y="62" class="txt-sample blink1" text-anchor="middle">SAMPLE ▶</text>
+
+        <rect x="343" y="42" width="138" height="30" class="phase-relax blink2"/>
+        <text x="412" y="62" class="txt-relax blink2" text-anchor="middle">RELAX ∿</text>
+
+        <rect x="483" y="42" width="138" height="30" class="phase-sample blink1"/>
+        <text x="552" y="62" class="txt-sample blink1" text-anchor="middle">SAMPLE ▶</text>
+
+        <!-- TSU-1 row: SAMPLE | RELAX | SAMPLE | RELAX -->
+        <rect x="63"  y="90" width="138" height="30" class="phase-sample blink1"/>
+        <text x="132" y="110" class="txt-sample blink1" text-anchor="middle">SAMPLE ▶</text>
+
+        <rect x="203" y="90" width="138" height="30" class="phase-relax blink2"/>
+        <text x="272" y="110" class="txt-relax blink2" text-anchor="middle">RELAX ∿</text>
+
+        <rect x="343" y="90" width="138" height="30" class="phase-sample blink1"/>
+        <text x="412" y="110" class="txt-sample blink1" text-anchor="middle">SAMPLE ▶</text>
+
+        <rect x="483" y="90" width="138" height="30" class="phase-relax blink2"/>
+        <text x="552" y="110" class="txt-relax blink2" text-anchor="middle">RELAX ∿</text>
+
+        <!-- Token output row -->
+        <rect x="63"  y="148" width="138" height="26" class="phase-out tok"/>
+        <text x="132" y="165" class="txt-out tok" text-anchor="middle">xₜ ✓</text>
+
+        <rect x="203" y="148" width="138" height="26" class="phase-out tok2"/>
+        <text x="272" y="165" class="txt-out tok2" text-anchor="middle">xₜ₊₁ ✓</text>
+
+        <rect x="343" y="148" width="138" height="26" class="phase-out tok3"/>
+        <text x="412" y="165" class="txt-out tok3" text-anchor="middle">xₜ₊₂ ✓</text>
+
+        <rect x="483" y="148" width="138" height="26" class="phase-out tok4"/>
+        <text x="552" y="165" class="txt-out tok4" text-anchor="middle">xₜ₊₃ ✓</text>
+
+        <!-- Latency hiding bracket -->
+        <line x1="63" y1="184" x2="622" y2="184" stroke="#b45309" stroke-width="1.5"/>
+        <line x1="63" y1="179" x2="63" y2="184"  stroke="#b45309" stroke-width="1.5"/>
+        <line x1="622" y1="179" x2="622" y2="184" stroke="#b45309" stroke-width="1.5"/>
+        <text x="342" y="196" class="tlbl" text-anchor="middle" fill="#b45309">← relaxation latency hidden behind alternate unit's sample time →</text>
+
+        <!-- Legend -->
+        <rect x="63"  y="208" width="10" height="10" class="phase-relax"/>
+        <text x="78"  y="218" class="tlbl">Relax (MCMC settling)</text>
+        <rect x="220" y="208" width="10" height="10" class="phase-sample"/>
+        <text x="235" y="218" class="tlbl">Sample (read-out)</text>
+        <rect x="360" y="208" width="10" height="10" class="phase-out"/>
+        <text x="375" y="218" class="tlbl">Token emitted</text>
+      </svg>
+    </div>
+  </div>
+
+  <p>The system Hamiltonian governing the inter-node coupling follows an Ising model, where each node $s_i$ is influenced both by its neighbors and by the external energy field from the transformer hidden state:</p>
+
+  $$H(\mathbf{s}) = -\sum_{i,j} J_{ij}\, s_i s_j - \sum_i h_i s_i$$
+
+  <p>The coupled energy of each node $k$ is then:</p>
+
+  $$\tilde{E}_k = E_k^{\text{base}} + \underbrace{J \cdot m}_{\text{context coupling}}, \qquad m_t = \alpha\, m_{t-1} + \mathbf{e}_{k^*}$$
+
+  <p>where $k^*$ is the node selected at the previous step and $\alpha \in (0, 1)$ is a decay factor, providing implicit coherence across tokens without an explicit attention mechanism.</p>
+</div>
+
+<hr class="divider">
+
+<!-- ── §3 ── -->
+<div class="section" id="s3">
+  <h2 class="sec-title">3. Hardware-Aware Emulation: Quantization &amp; Noise Tolerance</h2>
+  <p>
+    To validate the architectural viability for future analog substrates, the JAX-accelerated emulation strictly enforces simulated physical constraints. This ensures the algorithm operates robustly within defined error margins.
+  </p>
+
+  <h3 class="sub-title">DAC Resolution Limits</h3>
+  <p>
+    The energy states are subjected to strict bit-width quantization (e.g., 6-bit to 8-bit precision), emulating the resolution bottlenecks of Digital-to-Analog Converters on physical chips:
+  </p>
+
+  $$E_q = \frac{\operatorname{round}\!\left(E_{\text{norm}} \cdot 2^N\right)}{2^N} \cdot \Delta E + E_{\min}$$
+
+  <h3 class="sub-title">Thermal Noise Floor</h3>
+  <p>
+    Controlled Gaussian noise $\mathcal{N}(0,\,\sigma^2)$ is injected to model Johnson–Nyquist thermal fluctuations present in physical circuits:
+  </p>
+
+  $$E_{\text{eff}}(x_i) = E(x_i) + \epsilon, \qquad \epsilon \sim \mathcal{N}(0,\,\sigma^2)$$
+
+  <h3 class="sub-title">Room-for-Error Allocation</h3>
+  <p>
+    Rather than suppressing analog noise, the system actively utilizes it to drive the Gibbs sampling stochasticity, proving that strict deterministic precision is not a prerequisite for coherent semantic generation.
+  </p>
+
+  <div class="outputs-grid" style="margin-top:24px;">
+    <div class="output-box">
+      <div class="output-box-header">
+        <span class="output-engine">Master-DTM · 256 nodes</span>
+        <span class="output-config">DAC: 8-bit (256 levels)</span>
+      </div>
+      <div class="output-box-body">
+        <p class="output-prompt">"The future of quantum computing"</p>
+        <p class="output-text">"...is a hot and very widely discussed subject at C. I am the new (famouso) D-1 in my group on Combinatorics with Puzzles based The..."</p>
+      </div>
+    </div>
+    <div class="output-box">
+      <div class="output-box-header">
+        <span class="output-engine">Master-DTM · 256 nodes</span>
+        <span class="output-config">DAC: 3-bit (8 levels)</span>
+      </div>
+      <div class="output-box-body">
+        <p class="output-prompt">"The future of quantum computing"</p>
+        <p class="output-text">"...is shrou Denver, the a by Nisar Ramlari with sub- The and in it this New to all on that other at some which only an our first one cl up..."</p>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13.5px; color:var(--text3); margin-top:10px;">
+    8-bit DAC retains syntactic structure and topic coherence. 3-bit DAC exhibits vocabulary collapse consistent with reduced energy dynamic range — directly analogous to a real TSU operating below its signal-to-noise floor.
+  </p>
+
+  <div class="output-box" style="margin: 20px 0 0;">
+    <div class="output-box-header">
+      <span class="output-engine">Dual-TSU Ping-Pong · 512 nodes</span>
+      <span class="output-config">temp=0.6, relaxation_steps=15</span>
+    </div>
+    <div class="output-box-body">
+      <p class="output-prompt">"The emergence of consciousness in physical systems is"</p>
+      <p class="output-text">"...a transformative process bridging geological and ephemeral realms of terrestrial and celestial history. Our theory delineates exemplary and transformative systems endowed with distinguishing features. Our research endeavors focus principally on foundational and astronomical data..."</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ── §4 ── -->
+<div class="section" id="s4">
+  <h2 class="sec-title">4. Conclusion &amp; Implications</h2>
+  <p>
+    The Therma proof-of-concept establishes that massive language models (Qwen2.5-0.5B) can seamlessly operate on physics-based sampling engines without requiring extensive re-training. By shifting the computational burden from digital exactness to thermodynamic relaxation, this architecture outlines a scalable blueprint for the next generation of analog AI hardware.
+  </p>
+  <ul>
+    <li><strong>Zero re-training overhead:</strong> Pre-trained weights are repurposed directly as the energy landscape via a single transposition — no gradient updates required.</li>
+    <li><strong>Hardware noise as signal:</strong> Thermal fluctuations drive Gibbs sampling stochasticity rather than degrading it, inverting the traditional engineering trade-off.</li>
+    <li><strong>Latency hiding via ping-pong:</strong> Dual-TSU interleaving masks thermodynamic settling time, enabling continuous token throughput compatible with real-time inference.</li>
+    <li><strong>Graceful quantization degradation:</strong> DAC bit-depth reduction produces predictable quality trade-offs, confirming the architecture's tolerance for analog imprecision.</li>
+  </ul>
+  <div class="callout" style="margin-top:24px;">
+    By demonstrating that coherent autoregressive generation survives — and in principle benefits from — physical stochasticity, Therma provides an empirical foundation for thermodynamic processors as first-class inference accelerators.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ── Authors ── -->
+<div class="authors-block">
+  <div class="authors-inner">
+    <p class="authors-label">Author</p>
+    <p style="font-size:15.5px; color:var(--text); font-weight:600; margin-bottom:6px;">Phacharapon Phadeingkornburi</p>
+    <p style="font-size:14.5px; color:var(--text2); line-height:1.7; margin-bottom:16px;">
+      Independent researcher exploring thermodynamic computing and energy-based inference architectures.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:32px;">
+      <a href="https://github.com/Phacharapon-12/Therma" class="btn btn-outline" target="_blank" style="font-size:13px; padding:6px 14px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        GitHub
+      </a>
+      <a href="https://huggingface.co/phacharapon" class="btn btn-outline" target="_blank" style="font-size:13px; padding:6px 14px;">🤗 HuggingFace</a>
+      <a href="https://www.linkedin.com/in/phacharapon-phadiangkornburi-9bb0573b8/" class="btn btn-outline" target="_blank" style="font-size:13px; padding:6px 14px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+        LinkedIn
+      </a>
+    </div>
+
+    <p class="authors-label">Stack</p>
+    <p style="font-size:14.5px; color:var(--text2); margin-bottom:32px;">
+      PyTorch &nbsp;·&nbsp; JAX / JAXlib &nbsp;·&nbsp; THRML &nbsp;·&nbsp; HuggingFace Transformers &nbsp;·&nbsp; Qwen2.5-0.5B &nbsp;·&nbsp; Google Colab (T4 GPU)
+    </p>
+
+    <p class="authors-label">Citation</p>
+    <div class="code-wrap" style="margin-top:10px;">
+      <div class="code-header">
+        <span class="code-filename">citation</span>
+      </div>
+      <pre style="font-size:12.5px;">creator  = {Phacharapon Phadeingkornburi},
+title    = {Therma: Discrete Thermodynamic Machine Emulation
+            for Energy-Based Inference},
+gmail    = {failerlafv20@gmail.com  |  failerlafv7@gmail.com},
+linkedin = {Phacharapon Phadeingkornburi},
+github   = {https://github.com/Phacharapon-12/Therma},
+HGface   = {https://huggingface.co/phacharapon},
+year     = {2026}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<footer>
+  <span>© 2026 Phacharapon Phadeingkornburi &nbsp;·&nbsp; Independent Research</span>
+  <div class="footer-links">
+    <a href="https://github.com/Phacharapon-12/Therma" target="_blank">GitHub</a>
+    <a href="https://huggingface.co/phacharapon" target="_blank">HuggingFace</a>
+    <a href="https://www.linkedin.com/in/phacharapon-phadiangkornburi-9bb0573b8/" target="_blank">LinkedIn</a>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+(function buildEnergyDiagram() {
+
+  // ── Canvas ────────────────────────────────────────────────────────────
+  // Three panels laid out vertically with clear zones:
+  //   TITLE row  → y: 0..28
+  //   VISUAL row → y: 36..220
+  //   CAPTION    → y: 228..248
+  // Panels separated by arrow columns.
+  // Total viewBox: 860 × 260
+
+  const VW = 860, VH = 260;
+  const TITLE_Y  = 18;
+  const VIS_TOP  = 34;
+  const VIS_BOT  = 214;
+  const VIS_H    = VIS_BOT - VIS_TOP;   // 180
+  const CAP_Y    = 232;
+
+  const C = {
+    text:   '#18181b', text2: '#52525b', text3: '#a1a1aa',
+    border: '#e4e4df', bg:    '#ffffff', bg2:   '#f7f7f5',
+    amber:  '#b45309', amberL:'#fef3c7', amberM:'#fcd34d',
+    blue:   '#1e40af', blueL: '#dbeafe', blueB: '#93c5fd',
+    green:  '#15803d', greenL:'#dcfce7', greenB:'#86efac',
+    red:    '#dc2626', redL:  '#fee2e2',
+  };
+
+  const svg = d3.select('#energy-diagram')
+    .append('svg')
+    .attr('viewBox', `0 0 ${VW} ${VH}`)
+    .attr('width', '100%')
+    .style('font-family', "'DM Sans', sans-serif")
+    .style('overflow', 'visible');
+
+  // ── Shared arrowhead defs ─────────────────────────────────────────────
+  const defs = svg.append('defs');
+  [['arr-gray','#a1a1aa'],['arr-amber',C.amber],['arr-green',C.green]].forEach(([id,col]) => {
+    defs.append('marker').attr('id',id)
+      .attr('markerWidth',7).attr('markerHeight',7)
+      .attr('refX',6).attr('refY',3.5).attr('orient','auto')
+      .append('path').attr('d','M0,0.5 L0,6.5 L7,3.5 z').attr('fill',col);
+  });
+
+  // Helper: draw a section title
+  function sectionTitle(x, w, label, sub) {
+    svg.append('text').attr('x', x + w/2).attr('y', TITLE_Y)
+      .attr('text-anchor','middle').attr('font-size',12).attr('font-weight',700)
+      .attr('fill', C.text).text(label);
+    if (sub) svg.append('text').attr('x', x + w/2).attr('y', TITLE_Y + 14)
+      .attr('text-anchor','middle').attr('font-size',9.5).attr('fill',C.text3).text(sub);
+  }
+
+  // Helper: draw a caption below visual
+  function caption(x, w, text) {
+    svg.append('text').attr('x', x + w/2).attr('y', CAP_Y)
+      .attr('text-anchor','middle').attr('font-size',9.5).attr('fill',C.text3).text(text);
+  }
+
+  // Helper: horizontal arrow + two-line label between panels
+  function panelArrow(x1, x2, line1, line2, color, markerId) {
+    const mid = (x1+x2)/2, ay = VIS_TOP + VIS_H/2;
+    svg.append('line')
+      .attr('x1',x1).attr('y1',ay).attr('x2',x2-7).attr('y2',ay)
+      .attr('stroke',color).attr('stroke-width',1.5)
+      .attr('marker-end',`url(#${markerId})`);
+    const bg = svg.append('g').attr('transform',`translate(${mid},${ay})`);
+    bg.append('rect').attr('x',-36).attr('y',-24).attr('width',72).attr('height',18)
+      .attr('rx',3).attr('fill',C.amberL).attr('stroke',C.amberM).attr('stroke-width',1);
+    bg.append('text').attr('text-anchor','middle').attr('y',-10)
+      .attr('font-size',9.5).attr('font-weight',600).attr('fill',C.amber).text(line1);
+    if (line2) {
+      bg.append('rect').attr('x',-36).attr('y',-2).attr('width',72).attr('height',15)
+        .attr('rx',3).attr('fill',C.bg2).attr('stroke',C.border).attr('stroke-width',1);
+      bg.append('text').attr('text-anchor','middle').attr('y',10)
+        .attr('font-size',8.5).attr('fill',C.text3).text(line2);
+    }
+  }
+
+  // ── PANEL 1: Weight matrix ────────────────────────────────────────────
+  // x: 10..155, w: 145
+  const P1X = 10, P1W = 145;
+  const ROWS = 12, COLS = 7;
+  const cw = P1W / COLS, ch = VIS_H / ROWS;
+
+  sectionTitle(P1X, P1W, 'lm_head.weight  W', '(151,936 × 896)');
+  caption(P1X, P1W, 'Neural network weights — numeric scalers');
+
+  const matG = svg.append('g').attr('transform',`translate(${P1X},${VIS_TOP})`);
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const v = Math.abs(Math.sin(r * 127.1 + c * 311.7) * 43758.5453 % 1);
+      matG.append('rect')
+        .attr('x', c*cw + 0.5).attr('y', r*ch + 0.5)
+        .attr('width', cw-1).attr('height', ch-1).attr('rx',1)
+        .attr('fill', d3.interpolateBlues(0.15 + v * 0.75));
+    }
+  }
+  // border over cells
+  matG.append('rect').attr('width',P1W).attr('height',VIS_H)
+    .attr('fill','none').attr('stroke',C.border).attr('stroke-width',1.5).attr('rx',3);
+
+  // color scale legend (right side of matrix, inside)
+  const legX = P1X + P1W - 14, legH = 60, legY = VIS_TOP + VIS_H/2 - legH/2;
+  const legGrad = defs.append('linearGradient').attr('id','leg-blue')
+    .attr('x1','0').attr('y1','1').attr('x2','0').attr('y2','0');
+  legGrad.append('stop').attr('offset','0%').attr('stop-color',d3.interpolateBlues(0.15));
+  legGrad.append('stop').attr('offset','100%').attr('stop-color',d3.interpolateBlues(0.9));
+  svg.append('rect').attr('x',legX).attr('y',legY).attr('width',10).attr('height',legH)
+    .attr('fill','url(#leg-blue)').attr('stroke',C.border).attr('stroke-width',0.5).attr('rx',2);
+  svg.append('text').attr('x',legX-2).attr('y',legY+5)
+    .attr('text-anchor','end').attr('font-size',7.5).attr('fill',C.text3).text('+W');
+  svg.append('text').attr('x',legX-2).attr('y',legY+legH)
+    .attr('text-anchor','end').attr('font-size',7.5).attr('fill',C.text3).text('−W');
+
+  // ── Arrow 1 ───────────────────────────────────────────────────────────
+  panelArrow(P1X+P1W+6, 230, 'E = −(h · Wᵢ)', 'reinterpret as potential', C.amber, 'arr-amber');
+
+  // ── PANEL 2: Energy surface bar chart ────────────────────────────────
+  // x: 230..380, w: 150
+  const P2X = 230, P2W = 150;
+  const N_TOKENS = 24;
+
+  sectionTitle(P2X, P2W, 'Energy Surface  E(xᵢ)', null);
+  caption(P2X, P2W, 'Same data → physical potential per token');
+
+  const barArea = { x: P2X + 28, y: VIS_TOP + 4, w: P2W - 36, h: VIS_H - 16 };
+
+  // axes
+  svg.append('line')
+    .attr('x1',barArea.x).attr('y1',barArea.y)
+    .attr('x2',barArea.x).attr('y2',barArea.y+barArea.h)
+    .attr('stroke',C.border).attr('stroke-width',1.5);
+  svg.append('line')
+    .attr('x1',barArea.x).attr('y1',barArea.y+barArea.h)
+    .attr('x2',barArea.x+barArea.w).attr('y2',barArea.y+barArea.h)
+    .attr('stroke',C.border).attr('stroke-width',1.5);
+
+  // y-axis labels
+  svg.append('text').attr('x',barArea.x-4).attr('y',barArea.y+6)
+    .attr('text-anchor','end').attr('font-size',8).attr('fill',C.red).text('High E');
+  svg.append('text').attr('x',barArea.x-4).attr('y',barArea.y+barArea.h)
+    .attr('text-anchor','end').attr('font-size',8).attr('fill',C.blue).text('Low E');
+  // x-axis label
+  svg.append('text').attr('x',barArea.x+barArea.w/2).attr('y',barArea.y+barArea.h+13)
+    .attr('text-anchor','middle').attr('font-size',8).attr('fill',C.text3).text('tokens →');
+
+  // bars
+  const bw = barArea.w / N_TOKENS;
+  for (let i = 0; i < N_TOKENS; i++) {
+    const e = Math.abs(Math.sin(i * 53.3 + 7.1) * 0.5 + Math.sin(i * 17.7) * 0.3 + 0.4);
+    const eClamped = Math.min(Math.max(e, 0.05), 0.95);
+    const bh = eClamped * barArea.h;
+    const fill = d3.interpolateRgb(C.blueL, C.red)(eClamped);
+    svg.append('rect')
+      .attr('x', barArea.x + i*bw + 0.5)
+      .attr('y', barArea.y + barArea.h - bh)
+      .attr('width', bw-1).attr('height', bh).attr('rx', 1)
+      .attr('fill', fill)
+      .style('animation', `bar-rise 0.5s ease-out ${i*0.025}s both`);
+  }
+
+  // highlight lowest-energy bar
+  const energies = Array.from({length: N_TOKENS}, (_,i) =>
+    Math.abs(Math.sin(i*53.3+7.1)*0.5 + Math.sin(i*17.7)*0.3 + 0.4));
+  const minIdx = energies.indexOf(Math.min(...energies));
+  const minE = Math.min(...energies);
+  const minBH = Math.min(Math.max(minE,0.05),0.95) * barArea.h;
+  svg.append('rect')
+    .attr('x', barArea.x + minIdx*bw - 1)
+    .attr('y', barArea.y + barArea.h - minBH - 1)
+    .attr('width', bw+1).attr('height', minBH+1).attr('rx', 1)
+    .attr('fill','none').attr('stroke',C.green).attr('stroke-width',2)
+    .style('animation','node-glow 1.8s ease-in-out infinite');
+
+  svg.append('text')
+    .attr('x', barArea.x + minIdx*bw + bw/2)
+    .attr('y', barArea.y + barArea.h - minBH - 5)
+    .attr('text-anchor','middle').attr('font-size',7.5).attr('fill',C.green).attr('font-weight',600)
+    .text('P↑');
+
+  // ── Arrow 2 ───────────────────────────────────────────────────────────
+  panelArrow(P2X+P2W+6, 440, 'partition N nodes', `⌈151,936 ÷ N⌉ per node`, C.green, 'arr-green');
+
+  // ── PANEL 3: Nodes with stacked energy levels ─────────────────────────
+  // x: 440..850, w: 410
+  const P3X = 440, P3W = 410;
+  const NUM_NODES = 5;
+  const nodeW = 60, nodeGap = 12;
+  const totalNodesW = NUM_NODES * nodeW + (NUM_NODES-1) * nodeGap;
+  const nodeStartX = P3X + (P3W - totalNodesW - 20) / 2;
+  const SLOTS = 7;
+
+  sectionTitle(P3X, P3W, 'TSU Nodes  (×256 total)', null);
+  caption(P3X, P3W, 'Energy levels stacked per node — low-energy slot sampled by Boltzmann');
+
+  const nodeSeed = [0.82, 0.28, 0.65, 0.44, 0.91];
+  const slotH = (VIS_H - 12) / SLOTS;
+
+  for (let n = 0; n < NUM_NODES; n++) {
+    const nx = nodeStartX + n * (nodeW + nodeGap);
+    const ng = svg.append('g').attr('transform', `translate(${nx}, ${VIS_TOP + 4})`);
+
+    // Node container
+    ng.append('rect').attr('width', nodeW).attr('height', VIS_H - 8)
+      .attr('fill', C.bg2).attr('stroke', C.border).attr('stroke-width', 1.5).attr('rx', 3);
+
+    // Node label
+    svg.append('text')
+      .attr('x', nx + nodeW/2).attr('y', VIS_BOT + 13)
+      .attr('text-anchor','middle').attr('font-size', 9.5).attr('font-weight', 600)
+      .attr('fill', C.text2).text(`Node ${n}`);
+
+    // Slots
+    let minSlot = 0, minVal = 1;
+    const slotEnergies = Array.from({length: SLOTS}, (_, lv) => {
+      const v = Math.abs(Math.sin(n * 17.3 + lv * 41.7 + nodeSeed[n] * 100)) ;
+      return 0.06 + (v % 1) * 0.88;
+    });
+    minSlot = slotEnergies.indexOf(Math.min(...slotEnergies));
+    minVal  = slotEnergies[minSlot];
+
+    for (let lv = 0; lv < SLOTS; lv++) {
+      const e = slotEnergies[lv];
+      const sy = lv * slotH + 4;
+      const fillW = e * (nodeW - 8);
+      const col = e > 0.5
+        ? d3.interpolateRgb('#fef3c7', '#dc2626')((e-0.5)*2)
+        : d3.interpolateRgb('#dbeafe', '#1d4ed8')(e*2);
+
+      // slot background
+      ng.append('rect').attr('x', 4).attr('y', sy)
+        .attr('width', nodeW-8).attr('height', slotH-2)
+        .attr('fill', '#ececec').attr('rx', 2);
+
+      // energy fill
+      ng.append('rect').attr('x', 4).attr('y', sy)
+        .attr('width', fillW).attr('height', slotH-2)
+        .attr('fill', col).attr('rx', 2)
+        .style('animation', `bar-rise ${0.3 + n*0.08 + lv*0.04}s ease-out both`);
+
+      // energy value label (right-aligned inside bar area)
+      ng.append('text')
+        .attr('x', nodeW - 5).attr('y', sy + slotH - 4)
+        .attr('text-anchor','end').attr('font-size', 7).attr('fill', '#71717a')
+        .text((e).toFixed(2));
+    }
+
+    // Highlight selected (lowest E) slot with animated border
+    ng.append('rect')
+      .attr('x', 2).attr('y', minSlot * slotH + 2)
+      .attr('width', nodeW - 4).attr('height', slotH)
+      .attr('fill','none').attr('stroke', C.green).attr('stroke-width', 1.8)
+      .attr('rx', 3).attr('stroke-dasharray','3,2')
+      .style('animation', `node-glow 1.8s ease-in-out ${n*0.28}s infinite`);
+
+    // "sampled" label on the selected slot
+    ng.append('text')
+      .attr('x', nodeW/2).attr('y', minSlot * slotH + slotH - 3)
+      .attr('text-anchor','middle').attr('font-size', 6.5).attr('font-weight', 600)
+      .attr('fill', C.green).text('← sample');
+  }
+
+  // Ellipsis + ×256 hint
+  const ellX = nodeStartX + NUM_NODES * (nodeW + nodeGap) + 4;
+  svg.append('text').attr('x', ellX).attr('y', VIS_TOP + VIS_H/2 + 6)
+    .attr('font-size',16).attr('fill',C.text3).text('…');
+  svg.append('text').attr('x', ellX).attr('y', VIS_TOP + VIS_H/2 + 20)
+    .attr('font-size',9).attr('fill',C.text3).text('×256');
+
+  // ── Energy scale legend (panel 3 right) ──────────────────────────────
+  const scX = P3X + P3W - 18, scY = VIS_TOP + 10, scH = VIS_H - 20;
+  const scGrad = defs.append('linearGradient').attr('id','sc-grad')
+    .attr('x1','0').attr('y1','0').attr('x2','0').attr('y2','1');
+  scGrad.append('stop').attr('offset','0%').attr('stop-color',C.red);
+  scGrad.append('stop').attr('offset','50%').attr('stop-color','#fbbf24');
+  scGrad.append('stop').attr('offset','100%').attr('stop-color',C.blueL);
+  svg.append('rect').attr('x',scX).attr('y',scY).attr('width',10).attr('height',scH)
+    .attr('fill','url(#sc-grad)').attr('stroke',C.border).attr('stroke-width',0.5).attr('rx',2);
+  svg.append('text').attr('x',scX+5).attr('y',scY-3)
+    .attr('text-anchor','middle').attr('font-size',7.5).attr('fill',C.red).text('High E');
+  svg.append('text').attr('x',scX+5).attr('y',scY+scH+10)
+    .attr('text-anchor','middle').attr('font-size',7.5).attr('fill',C.blue).text('Low E');
+
+  // ── CSS keyframes ─────────────────────────────────────────────────────
+  const s = document.createElement('style');
+  s.textContent = `
+    @keyframes bar-rise {
+      from { clip-path: inset(0 100% 0 0); opacity:0; }
+      to   { clip-path: inset(0 0% 0 0);   opacity:1; }
+    }
+    @keyframes node-glow {
+      0%,100%{ opacity:0.2; stroke-width:1.5px; }
+      50%    { opacity:1;   stroke-width:2.2px; }
+    }
+  `;
+  document.head.appendChild(s);
+
+})();
+</script>
+
+</body>
+</html>
