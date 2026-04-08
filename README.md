@@ -1,2 +1,17 @@
-# TSU-Energy-Transformers
-A physics-inspired replacement for the Softmax layer in autoregressive LLM inference, enabling analog-hardware-compatible token generation via thermodynamic relaxation.
+# Therma: Discrete Thermodynamic Machine Emulation
+
+Therma is a high-performance emulation framework designed to replace the deterministic Softmax sampling heads of Large Language Models (LLMs) with a Discrete Thermodynamic Machine (DTM).
+Built on JAX, Therma re-interprets model weights as an energy landscape, utilizing stochastic relaxation and thermal noise to perform inference. This approach moves away from traditional "exact computation" toward a physical "state equilibrium" model, optimized for the next generation of analog-inspired AI hardware.
+
+# The Core Tech
+# 1. Weight-to-Energy Surgery
+Therma performs a zero-shot projection of Transformer hidden states into a potential energy manifold. By treating weights as energy coefficients, we eliminate the need for expensive global normalization (Softmax) and replace it with local Gibbs sampling.
+
+# 2. Dual-TSU Ping-Pong Architecture
+To achieve high-throughput inference, Therma utilizes a twin Thermodynamic Sampling Unit (TSU) system:
+
+Unit A (Sampling): Observes and reads the current token state.
+
+Unit B (Relaxation): Simultaneously uses the latency window to thermally equilibrate the next token.
+
+This architecture effectively hides the MCMC mixing time, enabling fluid token generation.
