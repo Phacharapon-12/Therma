@@ -23,9 +23,13 @@ Hardware Constraints: Emulates DAC precision limits and thermal noise floors.Bet
 
 # Project Structure
 ├── core/               # JAX-based TSU & DTM engine
+
 ├── visualization/      # Interactive SVG/D3 energy manifold assets
+
 ├── Therma_Core.ipynb   # Full PoC: Weight Surgery & Inference
+
 ├── index.html          # Interactive Research Publication
+
 └── LICENSE             # MIT
 
 # Implementation
