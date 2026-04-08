@@ -38,4 +38,5 @@ Hardware Constraints: Emulates DAC precision limits and thermal noise floors.Bet
 from therma import TSUCore
 
 engine = TSUCore.load_emulation(backbone="Qwen2.5-0.5B")
+
 output = engine.relax(input_text="The entropy of the system is")
