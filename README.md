@@ -15,3 +15,7 @@ Unit A (Sampling): Observes and reads the current token state.
 Unit B (Relaxation): Simultaneously uses the latency window to thermally equilibrate the next token.
 
 This architecture effectively hides the MCMC mixing time, enabling fluid token generation.
+
+# 3. Stochastic Fidelity
+Hardware Constraints: Emulates DAC precision limits and thermal noise floors.Beta 
+($\beta$) Control: Dynamic inverse temperature scheduling to balance creativity and precision.
