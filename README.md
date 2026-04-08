@@ -18,4 +18,21 @@ This architecture effectively hides the MCMC mixing time, enabling fluid token g
 
 # 3. Stochastic Fidelity
 Hardware Constraints: Emulates DAC precision limits and thermal noise floors.Beta 
+
 ($\beta$) Control: Dynamic inverse temperature scheduling to balance creativity and precision.
+
+# Project Structure
+├── core/               # JAX-based TSU & DTM engine
+├── visualization/      # Interactive SVG/D3 energy manifold assets
+├── Therma_Core.ipynb   # Full PoC: Weight Surgery & Inference
+├── index.html          # Interactive Research Publication
+└── LICENSE             # MIT
+
+# Implementation
+pip install jax[cuda12] transformers thrml
+
+from therma import TSUCore
+
+#Initialize Therma with a 512-node DTM
+engine = TSUCore.load_emulation(backbone="Qwen2.5-0.5B")
+output = engine.relax(input_text="The entropy of the system is")
