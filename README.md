@@ -53,7 +53,7 @@ output = engine.relax(input_text="The entropy of the system is")
 
   github   = {[https://github.com/Phacharapon-12/Therma](https://github.com/Phacharapon-12/Therma)},
   
-  github   = {[https://huggingface.co/phacharapon](https://huggingface.co/phacharapon)},
+  HGface   = {[https://huggingface.co/phacharapon](https://huggingface.co/phacharapon)},
   
   year     = {2026}
 
