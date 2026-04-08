@@ -44,10 +44,10 @@ output = engine.relax(input_text="The entropy of the system is")
 # Citation
 
   creator  = {Phacharapon Phadeingkornburi},
-  
-  gmail    = {failerlafv20@gmail.com or failerlafv7@gmail.com},
 
   title    = {Therma: Discrete Thermodynamic Machine Emulation for Energy-Based Inference},
+  
+  gmail    = {failerlafv20@gmail.com or failerlafv7@gmail.com},
   
   linkedin = {[Phacharapon Phadeingkornburi](https://www.linkedin.com/in/phacharapon-phadiangkornburi-9bb0573b8/)},
 
