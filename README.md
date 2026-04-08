@@ -42,7 +42,7 @@ engine = TSUCore.load_emulation(backbone="Qwen2.5-0.5B")
 output = engine.relax(input_text="The entropy of the system is")
 
 # Citation
-{
+
   creator  = {Phacharapon Phadeingkornburi},
   
   cmail    = {failerlafv20@gmail.com or failerlafv7@gmail.com},
@@ -54,7 +54,6 @@ output = engine.relax(input_text="The entropy of the system is")
   url      = {[https://github.com/Phacharapon-12/Therma](https://github.com/Phacharapon-12/Therma)},
   
   year     = {2026}
-}
 
 # Technical Persona
 Therma is built by an independent researcher with a focus on making complex physics-based AI accessible and practical. This project is a proof-of-concept for a future where AI doesn't just calculate—it relaxes into an answer.
