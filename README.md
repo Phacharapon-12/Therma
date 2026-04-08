@@ -42,12 +42,13 @@ engine = TSUCore.load_emulation(backbone="Qwen2.5-0.5B")
 output = engine.relax(input_text="The entropy of the system is")
 
 # Citation
-@misc{phadeingkornburi2026therma,
-  creator = {Phacharapon Phadeingkornburi},
-  cmail   = {failerlafv20@gmail.com or failerlafv7@gmail.com},
-  title   = {Therma: Discrete Thermodynamic Machine Emulation for Energy-Based Inference},
-  year    = {2026},
-  url     = {https://github.com/Phacharapon-12/Therma}
+{
+  creator  = {Phacharapon Phadeingkornburi},
+  cmail    = {failerlafv20@gmail.com or failerlafv7@gmail.com},
+  linkedin = {[Phacharapon Phadeingkornburi](https://www.linkedin.com/in/phacharapon-phadiangkornburi-9bb0573b8/)},
+  title    = {Therma: Discrete Thermodynamic Machine Emulation for Energy-Based Inference},
+  url      = {[https://github.com/Phacharapon-12/Therma](https://github.com/Phacharapon-12/Therma)},
+  year     = {2026}
 }
 
 # Technical Persona
