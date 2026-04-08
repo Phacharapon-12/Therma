@@ -45,7 +45,7 @@ output = engine.relax(input_text="The entropy of the system is")
 
   creator  = {Phacharapon Phadeingkornburi},
   
-  cmail    = {failerlafv20@gmail.com or failerlafv7@gmail.com},
+  gmail    = {failerlafv20@gmail.com or failerlafv7@gmail.com},
   
   linkedin = {[Phacharapon Phadeingkornburi](https://www.linkedin.com/in/phacharapon-phadiangkornburi-9bb0573b8/)},
   
